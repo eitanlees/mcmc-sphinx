@@ -1,0 +1,599 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>Sampling Non-Standard Distributions &mdash; Monte Carlo Methods 2019 documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+  <script type="text/javascript" src="../_static/js/modernizr.min.js"></script>
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+        <script type="text/javascript" src="../_static/jquery.js"></script>
+        <script type="text/javascript" src="../_static/underscore.js"></script>
+        <script type="text/javascript" src="../_static/doctools.js"></script>
+        <script type="text/javascript" src="../_static/language_data.js"></script>
+        <script async="async" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    
+    <script type="text/javascript" src="../_static/js/theme.js"></script>
+
+    
+
+  
+  <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="prev" title="Probability and Pseudorandom Numbers" href="sampleDistributions-updated.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../index.html" class="icon icon-home"> Monte Carlo Methods
+          
+
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <p class="caption"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="motivation-updated.html">Introduction to Monte Carlo</a></li>
+<li class="toctree-l1"><a class="reference internal" href="sampleDistributions-updated.html">Probability and Pseudorandom Numbers</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Sampling Non-Standard Distributions</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#transformation-method">Transformation Method</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#advantages-and-disadvantages">Advantages and Disadvantages:</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#accept-reject-method">Accept-Reject Method</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#postface">PostFace</a></li>
+</ul>
+</li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">Monte Carlo Methods</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../index.html">Docs</a> &raquo;</li>
+        
+      <li>Sampling Non-Standard Distributions</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+            <a href="../_sources/notebooks/SamplingNonStandard1D-updated.rst.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="sampling-non-standard-distributions">
+<h1>Sampling Non-Standard Distributions<a class="headerlink" href="#sampling-non-standard-distributions" title="Permalink to this headline">¶</a></h1>
+<p>We will learn two techniques to use the continuous uniform distribution
+U[0,1], to sample from other distributions.</p>
+<ul class="simple">
+<li><p>Transformation Method</p></li>
+<li><p>Accept-Reject Method</p></li>
+</ul>
+<p>The second method is somewhat more general than the first.</p>
+<p>We have seen a particular avataar of the accept-reject method when we
+tried to find the area of a circle by throwing darts.</p>
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># preliminaries</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">from</span> <span class="nn">scipy.stats</span> <span class="k">import</span> <span class="n">uniform</span><span class="p">,</span> <span class="n">norm</span>
+<span class="kn">import</span> <span class="nn">matplotlib.pyplot</span> <span class="k">as</span> <span class="nn">plt</span>
+<span class="kn">import</span> <span class="nn">matplotlib</span> <span class="k">as</span> <span class="nn">mpl</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">style</span><span class="o">.</span><span class="n">use</span><span class="p">(</span><span class="s1">&#39;seaborn&#39;</span><span class="p">)</span>
+<span class="n">mpl</span><span class="o">.</span><span class="n">rcParams</span><span class="p">[</span><span class="s1">&#39;lines.linewidth&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="mi">2</span>
+<span class="n">mpl</span><span class="o">.</span><span class="n">rcParams</span><span class="p">[</span><span class="s1">&#39;axes.labelsize&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;Large&#39;</span>
+<span class="n">mpl</span><span class="o">.</span><span class="n">rcParams</span><span class="p">[</span><span class="s1">&#39;xtick.labelsize&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;Large&#39;</span>
+<span class="n">mpl</span><span class="o">.</span><span class="n">rcParams</span><span class="p">[</span><span class="s1">&#39;ytick.labelsize&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;Large&#39;</span>
+<span class="kn">from</span> <span class="nn">IPython.display</span> <span class="k">import</span> <span class="n">display</span>
+<span class="o">%</span><span class="k">matplotlib</span> inline
+<span class="o">%</span><span class="k">config</span> InlineBackend.figure_format = &#39;svg&#39;
+</pre></div>
+</div>
+<div class="section" id="transformation-method">
+<h2>Transformation Method<a class="headerlink" href="#transformation-method" title="Permalink to this headline">¶</a></h2>
+<p>The idea in this method is to use random numbers</p>
+<div class="math notranslate nohighlight">
+\[u_1, u_2, ..., u_n \sim g(u)= U[0,1],\]</div>
+<p>to produce random numbers from a different PDF</p>
+<div class="math notranslate nohighlight">
+\[x_1, x_2, ... x_n \sim f(x),\]</div>
+<p>by seeking a suitable mathematical mapping or transformation
+<span class="math notranslate nohighlight">\(x(u)\)</span>.</p>
+<p>One idea to get a suitable mapping is to match the CDFs.</p>
+<p><strong>Note:</strong> - The relationship between CDF and PDF is unique - The mapping
+will depend on <span class="math notranslate nohighlight">\(f(x)\)</span></p>
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">xi</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="o">-</span><span class="mf">0.1</span><span class="p">,</span><span class="mf">1.1</span><span class="p">,</span><span class="mi">1000</span><span class="p">)</span>
+<span class="n">ui</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">xi</span><span class="p">))</span>
+<span class="n">ui</span><span class="p">[</span><span class="n">xi</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="mf">0.</span><span class="p">;</span> <span class="n">ui</span><span class="p">[</span><span class="n">xi</span> <span class="o">&gt;</span> <span class="mf">1.</span><span class="p">]</span> <span class="o">=</span> <span class="mf">0.</span>
+
+<span class="n">fig</span><span class="p">,</span> <span class="n">axarr</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="n">sharex</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+<span class="n">axarr</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">xi</span><span class="p">,</span><span class="n">ui</span><span class="p">)</span>
+<span class="n">axarr</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">set_ylabel</span><span class="p">(</span><span class="s1">&#39;g(u)&#39;</span><span class="p">,</span> <span class="n">fontsize</span><span class="o">=</span><span class="s1">&#39;18&#39;</span><span class="p">)</span>
+
+<span class="n">axarr</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">fill_between</span><span class="p">(</span><span class="n">xi</span><span class="p">[</span><span class="mi">0</span><span class="p">:</span><span class="mi">420</span><span class="p">],</span> <span class="mi">0</span><span class="p">,</span> <span class="n">ui</span><span class="p">[</span><span class="mi">0</span><span class="p">:</span><span class="mi">420</span><span class="p">],</span> <span class="n">facecolor</span><span class="o">=</span><span class="s1">&#39;blue&#39;</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.2</span><span class="p">)</span>
+<span class="n">axarr</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">set_ylim</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="mf">2.1</span><span class="p">)</span>
+
+<span class="n">xi</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="o">-</span><span class="mf">0.1</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="mi">1000</span><span class="p">)</span>
+<span class="n">lam</span> <span class="o">=</span> <span class="mf">2.0</span><span class="p">;</span> <span class="n">fexp</span> <span class="o">=</span> <span class="n">lam</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="o">-</span><span class="n">lam</span><span class="o">*</span><span class="n">xi</span><span class="p">)</span>
+<span class="n">fexp</span><span class="p">[</span><span class="n">xi</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="mf">0.</span>
+<span class="n">axarr</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">xi</span><span class="p">,</span> <span class="n">fexp</span><span class="p">,</span><span class="s1">&#39;g-&#39;</span><span class="p">)</span>
+<span class="n">axarr</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">set_xlabel</span><span class="p">(</span><span class="s1">&#39;x&#39;</span><span class="p">,</span> <span class="n">fontsize</span><span class="o">=</span><span class="s1">&#39;18&#39;</span><span class="p">)</span>
+<span class="n">axarr</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">set_ylabel</span><span class="p">(</span><span class="s1">&#39;f(x)&#39;</span><span class="p">,</span> <span class="n">fontsize</span><span class="o">=</span><span class="s1">&#39;18&#39;</span><span class="p">)</span>
+<span class="n">axarr</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">fill_between</span><span class="p">(</span><span class="n">xi</span><span class="p">[</span><span class="mi">0</span><span class="p">:</span><span class="mi">140</span><span class="p">],</span> <span class="mi">0</span><span class="p">,</span> <span class="n">fexp</span><span class="p">[</span><span class="mi">0</span><span class="p">:</span><span class="mi">140</span><span class="p">],</span> <span class="n">facecolor</span><span class="o">=</span><span class="s1">&#39;green&#39;</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.2</span><span class="p">)</span>
+<span class="n">axarr</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">set_ylim</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="mf">2.1</span><span class="p">)</span>
+</pre></div>
+</div>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mf">2.1</span><span class="p">)</span>
+</pre></div>
+</div>
+<img alt="../_images/SamplingNonStandard1D-updated_5_1.svg" src="../_images/SamplingNonStandard1D-updated_5_1.svg" /><div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">x</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="o">-</span><span class="mi">2</span><span class="p">,</span><span class="mi">3</span><span class="p">,</span><span class="mi">1000</span><span class="p">)</span>
+<span class="n">cexp</span> <span class="o">=</span> <span class="n">norm</span><span class="o">.</span><span class="n">cdf</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+<span class="n">cuni</span> <span class="o">=</span> <span class="n">uniform</span><span class="o">.</span><span class="n">cdf</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+</pre></div>
+</div>
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">x</span><span class="p">,</span><span class="n">cexp</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s1">&#39;normal&#39;</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">x</span><span class="p">,</span><span class="n">cuni</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s1">&#39;uniform&#39;</span><span class="p">)</span>
+
+<span class="n">plt</span><span class="o">.</span><span class="n">arrow</span><span class="p">(</span><span class="mf">0.1</span><span class="p">,</span> <span class="mf">0.1</span><span class="p">,</span> <span class="o">-</span><span class="mf">1.25</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">,</span> <span class="n">head_width</span><span class="o">=</span><span class="mf">0.015</span><span class="p">,</span> <span class="n">head_length</span><span class="o">=</span><span class="mf">0.1</span><span class="p">,</span> <span class="n">fc</span><span class="o">=</span><span class="s1">&#39;k&#39;</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">text</span><span class="p">(</span><span class="mf">0.15</span><span class="p">,</span> <span class="mf">0.09</span><span class="p">,</span> <span class="sa">r</span><span class="s1">&#39;$u_1$&#39;</span><span class="p">,</span> <span class="p">{</span><span class="s1">&#39;size&#39;</span><span class="p">:</span><span class="mi">14</span><span class="p">,</span> <span class="s1">&#39;family&#39;</span><span class="p">:</span><span class="s1">&#39;serif&#39;</span><span class="p">,</span> <span class="s1">&#39;usetex&#39;</span><span class="p">:</span><span class="kc">True</span><span class="p">})</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">text</span><span class="p">(</span><span class="o">-</span><span class="mf">1.5</span><span class="p">,</span> <span class="mf">0.1</span><span class="p">,</span> <span class="sa">r</span><span class="s1">&#39;$x_1$&#39;</span><span class="p">,</span> <span class="p">{</span><span class="s1">&#39;size&#39;</span><span class="p">:</span><span class="mi">14</span><span class="p">,</span> <span class="s1">&#39;family&#39;</span><span class="p">:</span><span class="s1">&#39;serif&#39;</span><span class="p">,</span> <span class="s1">&#39;usetex&#39;</span><span class="p">:</span><span class="kc">True</span><span class="p">})</span>
+
+<span class="n">plt</span><span class="o">.</span><span class="n">arrow</span><span class="p">(</span><span class="mf">0.5</span><span class="p">,</span> <span class="mf">0.5</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.4</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">,</span> <span class="n">head_width</span><span class="o">=</span><span class="mf">0.015</span><span class="p">,</span> <span class="n">head_length</span><span class="o">=</span><span class="mf">0.1</span><span class="p">,</span> <span class="n">fc</span><span class="o">=</span><span class="s1">&#39;k&#39;</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">text</span><span class="p">(</span><span class="mf">0.6</span><span class="p">,</span> <span class="mf">0.48</span><span class="p">,</span> <span class="sa">r</span><span class="s1">&#39;$u_2$&#39;</span><span class="p">,</span> <span class="p">{</span><span class="s1">&#39;size&#39;</span><span class="p">:</span><span class="mi">14</span><span class="p">,</span> <span class="s1">&#39;family&#39;</span><span class="p">:</span><span class="s1">&#39;serif&#39;</span><span class="p">,</span> <span class="s1">&#39;usetex&#39;</span><span class="p">:</span><span class="kc">True</span><span class="p">})</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">text</span><span class="p">(</span><span class="o">-</span><span class="mf">0.3</span><span class="p">,</span> <span class="mf">0.5</span><span class="p">,</span> <span class="sa">r</span><span class="s1">&#39;$x_2$&#39;</span><span class="p">,</span> <span class="p">{</span><span class="s1">&#39;size&#39;</span><span class="p">:</span><span class="mi">14</span><span class="p">,</span> <span class="s1">&#39;family&#39;</span><span class="p">:</span><span class="s1">&#39;serif&#39;</span><span class="p">,</span> <span class="s1">&#39;usetex&#39;</span><span class="p">:</span><span class="kc">True</span><span class="p">})</span>
+
+<span class="n">plt</span><span class="o">.</span><span class="n">arrow</span><span class="p">(</span><span class="mf">0.95</span><span class="p">,</span> <span class="mf">0.95</span><span class="p">,</span> <span class="mf">0.55</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">,</span> <span class="n">head_width</span><span class="o">=</span><span class="mf">0.015</span><span class="p">,</span> <span class="n">head_length</span><span class="o">=</span><span class="mf">0.1</span><span class="p">,</span> <span class="n">fc</span><span class="o">=</span><span class="s1">&#39;k&#39;</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">text</span><span class="p">(</span><span class="mf">0.6</span><span class="p">,</span> <span class="mf">0.92</span><span class="p">,</span> <span class="sa">r</span><span class="s1">&#39;$u_3$&#39;</span><span class="p">,</span> <span class="p">{</span><span class="s1">&#39;size&#39;</span><span class="p">:</span><span class="mi">14</span><span class="p">,</span> <span class="s1">&#39;family&#39;</span><span class="p">:</span><span class="s1">&#39;serif&#39;</span><span class="p">,</span> <span class="s1">&#39;usetex&#39;</span><span class="p">:</span><span class="kc">True</span><span class="p">})</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">text</span><span class="p">(</span><span class="mf">1.7</span><span class="p">,</span> <span class="mf">0.9</span><span class="p">,</span> <span class="sa">r</span><span class="s1">&#39;$x_3$&#39;</span><span class="p">,</span> <span class="p">{</span><span class="s1">&#39;size&#39;</span><span class="p">:</span><span class="mi">14</span><span class="p">,</span> <span class="s1">&#39;family&#39;</span><span class="p">:</span><span class="s1">&#39;serif&#39;</span><span class="p">,</span> <span class="s1">&#39;usetex&#39;</span><span class="p">:</span><span class="kc">True</span><span class="p">})</span>
+
+<span class="n">plt</span><span class="o">.</span><span class="n">xlabel</span><span class="p">(</span><span class="s1">&#39;x, u&#39;</span><span class="p">,</span> <span class="n">fontsize</span><span class="o">=</span><span class="mi">18</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">ylabel</span><span class="p">(</span><span class="s1">&#39;CDF&#39;</span><span class="p">,</span> <span class="n">fontsize</span><span class="o">=</span><span class="mi">18</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">legend</span><span class="p">(</span><span class="n">loc</span><span class="o">=</span><span class="s1">&#39;lower right&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="o">&lt;</span><span class="n">matplotlib</span><span class="o">.</span><span class="n">legend</span><span class="o">.</span><span class="n">Legend</span> <span class="n">at</span> <span class="mh">0x125e476d8</span><span class="o">&gt;</span>
+</pre></div>
+</div>
+<img alt="../_images/SamplingNonStandard1D-updated_7_1.svg" src="../_images/SamplingNonStandard1D-updated_7_1.svg" /><p>For a somewhat intuitive graphical interpretation, consider the CDF of
+the target distribution.</p>
+<p>We draw <span class="math notranslate nohighlight">\(u \sim U[0,1]\)</span> (y-axis or plot), and use the CDF (solve
+<span class="math notranslate nohighlight">\(F(x)=u\)</span>) to transform it to <span class="math notranslate nohighlight">\(x\)</span> (corresponding point on the
+x-axis).</p>
+<p>The condition we impose is:</p>
+<div class="math notranslate nohighlight">
+\[\text{Pr}(u'\leq u) = \text{Pr}\left(x' \leq x(u)\right).\]</div>
+<p>Thus,</p>
+<div class="math notranslate nohighlight">
+\[\int_{-\infty}^{u} g(u') du' = \int_{-\infty}^{x(u)} f(x') dx'\]</div>
+<p>Or, <span class="math notranslate nohighlight">\(u = F(x(u))\)</span>, where <span class="math notranslate nohighlight">\(F(x)\)</span> is the CDF corresponding to
+<span class="math notranslate nohighlight">\(f(x)\)</span>.</p>
+<p>Thus, we set <span class="math notranslate nohighlight">\(F(x) = u\)</span>. If it is possible to solve for <span class="math notranslate nohighlight">\(x\)</span>
+in terms of <span class="math notranslate nohighlight">\(u\)</span>, then we are in business!</p>
+<p>In essence, the success of this method hinges on our ability to
+explicity solve for <span class="math notranslate nohighlight">\(x = F^{-1}(u)\)</span>.</p>
+<p>The domain of <span class="math notranslate nohighlight">\(U[0, 1]\)</span> matches the range of the CDF (0-1). - draw
+<span class="math notranslate nohighlight">\(u \sim U[0, 1]\)</span>, - use the CDF (solve <span class="math notranslate nohighlight">\(F(x) = u)\)</span> to get
+<span class="math notranslate nohighlight">\(x\)</span></p>
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">xi</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="o">-</span><span class="mf">0.1</span><span class="p">,</span><span class="mf">2.5</span><span class="p">,</span><span class="mi">1000</span><span class="p">)</span>
+<span class="n">lam</span> <span class="o">=</span> <span class="mf">2.0</span><span class="p">;</span> <span class="n">Fexp</span> <span class="o">=</span> <span class="mi">1</span> <span class="o">-</span> <span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="o">-</span><span class="n">lam</span><span class="o">*</span><span class="n">xi</span><span class="p">)</span>
+<span class="n">Fexp</span><span class="p">[</span><span class="n">xi</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="mf">0.</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">xi</span><span class="p">,</span> <span class="n">Fexp</span><span class="p">,</span><span class="s1">&#39;g-&#39;</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">xi</span><span class="p">[</span><span class="mi">140</span><span class="p">],</span><span class="n">Fexp</span><span class="p">[</span><span class="mi">140</span><span class="p">],</span><span class="s1">&#39;bo&#39;</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">([</span><span class="n">xi</span><span class="p">[</span><span class="mi">140</span><span class="p">],</span> <span class="n">xi</span><span class="p">[</span><span class="mi">140</span><span class="p">]],[</span><span class="mf">0.</span><span class="p">,</span> <span class="n">Fexp</span><span class="p">[</span><span class="mi">140</span><span class="p">]],</span><span class="s1">&#39;k-&#39;</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">([</span><span class="mf">0.</span><span class="p">,</span> <span class="n">xi</span><span class="p">[</span><span class="mi">140</span><span class="p">]],[</span><span class="n">Fexp</span><span class="p">[</span><span class="mi">140</span><span class="p">],</span> <span class="n">Fexp</span><span class="p">[</span><span class="mi">140</span><span class="p">]],</span><span class="s1">&#39;k-&#39;</span><span class="p">)</span>
+<span class="n">xp</span> <span class="o">=</span> <span class="n">xi</span><span class="p">[</span><span class="mi">120</span><span class="p">]</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">xlabel</span><span class="p">(</span><span class="s1">&#39;x&#39;</span><span class="p">,</span> <span class="n">fontsize</span><span class="o">=</span><span class="s1">&#39;18&#39;</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">ylabel</span><span class="p">(</span><span class="s1">&#39;F(x)&#39;</span><span class="p">,</span> <span class="n">fontsize</span><span class="o">=</span><span class="s1">&#39;18&#39;</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">xlim</span><span class="p">(</span><span class="mf">0.</span><span class="p">,</span> <span class="mf">2.5</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">text</span><span class="p">(</span><span class="o">-</span><span class="mf">0.25</span><span class="p">,</span> <span class="mf">0.37</span><span class="p">,</span> <span class="s1">&#39;u&#39;</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s1">&#39;red&#39;</span><span class="p">,</span> <span class="n">fontsize</span><span class="o">=</span><span class="mi">15</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">text</span><span class="p">(</span><span class="mf">0.2</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.07</span><span class="p">,</span> <span class="s1">&#39;x&#39;</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s1">&#39;red&#39;</span><span class="p">,</span> <span class="n">fontsize</span><span class="o">=</span><span class="mi">15</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">ylim</span><span class="p">(</span><span class="mf">0.</span><span class="p">,</span><span class="mf">1.0</span><span class="p">)</span>
+</pre></div>
+</div>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="p">(</span><span class="mf">0.0</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">)</span>
+</pre></div>
+</div>
+<img alt="../_images/SamplingNonStandard1D-updated_9_1.svg" src="../_images/SamplingNonStandard1D-updated_9_1.svg" /><p>This is equivalent to flipping the graph below on its side.</p>
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">Fexp</span><span class="p">,</span> <span class="n">xi</span><span class="p">,</span><span class="s1">&#39;g-&#39;</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">Fexp</span><span class="p">[</span><span class="mi">140</span><span class="p">],</span><span class="n">xi</span><span class="p">[</span><span class="mi">140</span><span class="p">],</span><span class="s1">&#39;bo&#39;</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">([</span><span class="mf">0.</span><span class="p">,</span> <span class="n">Fexp</span><span class="p">[</span><span class="mi">140</span><span class="p">]],</span> <span class="p">[</span><span class="n">xi</span><span class="p">[</span><span class="mi">140</span><span class="p">],</span> <span class="n">xi</span><span class="p">[</span><span class="mi">140</span><span class="p">]],</span><span class="s1">&#39;k-&#39;</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">([</span><span class="n">Fexp</span><span class="p">[</span><span class="mi">140</span><span class="p">],</span> <span class="n">Fexp</span><span class="p">[</span><span class="mi">140</span><span class="p">]],</span> <span class="p">[</span><span class="mf">0.</span><span class="p">,</span> <span class="n">xi</span><span class="p">[</span><span class="mi">140</span><span class="p">]],</span><span class="s1">&#39;k-&#39;</span><span class="p">)</span>
+<span class="n">xp</span> <span class="o">=</span> <span class="n">xi</span><span class="p">[</span><span class="mi">120</span><span class="p">]</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">ylabel</span><span class="p">(</span><span class="s1">&#39;x&#39;</span><span class="p">,</span> <span class="n">fontsize</span><span class="o">=</span><span class="s1">&#39;18&#39;</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">xlabel</span><span class="p">(</span><span class="s1">&#39;F(x)&#39;</span><span class="p">,</span> <span class="n">fontsize</span><span class="o">=</span><span class="s1">&#39;18&#39;</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">ylim</span><span class="p">(</span><span class="mf">0.</span><span class="p">,</span> <span class="mf">2.5</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">text</span><span class="p">(</span><span class="mf">0.4</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.28</span><span class="p">,</span> <span class="s1">&#39;u&#39;</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s1">&#39;red&#39;</span><span class="p">,</span> <span class="n">fontsize</span><span class="o">=</span><span class="mi">15</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">text</span><span class="p">(</span><span class="o">-</span><span class="mf">0.05</span><span class="p">,</span> <span class="mf">0.23</span><span class="p">,</span> <span class="s1">&#39;x&#39;</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s1">&#39;red&#39;</span><span class="p">,</span> <span class="n">fontsize</span><span class="o">=</span><span class="mi">15</span><span class="p">)</span>
+</pre></div>
+</div>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">Text</span><span class="p">(</span><span class="o">-</span><span class="mf">0.05</span><span class="p">,</span><span class="mf">0.23</span><span class="p">,</span><span class="s1">&#39;x&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+<img alt="../_images/SamplingNonStandard1D-updated_11_1.svg" src="../_images/SamplingNonStandard1D-updated_11_1.svg" /><p>If we can analytically solve <span class="math notranslate nohighlight">\(x = F^{−1}(u)\)</span>, this is likely our
+best option.</p>
+<p>An alternative may be to use some sort of piecewise curve (line, cubic,
+spline) to fit the <span class="math notranslate nohighlight">\(F(x)\)</span>, and then use interpolation to generate
+the random deviates.</p>
+<p>In general, we could use a nonlinear solver to solve <span class="math notranslate nohighlight">\(F(x)=u\)</span>, but
+that may involve too much overhead.</p>
+<p><em>Example</em>: Suppose we want to produce random numbers from the
+exponential distribution</p>
+<div class="math notranslate nohighlight">
+\[f(x; \lambda) = \lambda \exp(-\lambda x), ~~~x&gt;0.\]</div>
+<p>From the transformation method:</p>
+<div class="math notranslate nohighlight">
+\[\begin{split}\begin{align}
+u &amp;= F(x)\\
+ &amp;= \int_{0}^{x} \lambda \exp(-\lambda X) dX \\
+  &amp;= 1 - e^{-\lambda x}.
+\end{align}`\end{split}\]</div>
+<p>Thus</p>
+<div class="math notranslate nohighlight">
+\[x = \frac{-\ln(1 - u)}{\lambda}.\]</div>
+<p>Let us try to write a program this implements this transformation</p>
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">myExponentialSampler</span><span class="p">(</span><span class="n">lam</span><span class="p">,</span> <span class="n">num</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Generate -num- exponentially distributed samples&quot;&quot;&quot;</span>
+    <span class="n">u</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">random</span><span class="p">((</span><span class="n">num</span><span class="p">,</span><span class="mi">1</span><span class="p">))</span>
+    <span class="n">x</span> <span class="o">=</span> <span class="o">-</span><span class="n">np</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="mi">1</span><span class="o">-</span><span class="n">u</span><span class="p">)</span><span class="o">/</span><span class="n">lam</span>
+    <span class="k">return</span> <span class="n">x</span>
+</pre></div>
+</div>
+<p>Suppose <span class="math notranslate nohighlight">\(\lambda = 2\)</span>. Generate 5000 numbers and histogram them.
+The blue line is the actual distribution <span class="math notranslate nohighlight">\(2 \exp(−2x)\)</span></p>
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">x</span> <span class="o">=</span> <span class="n">myExponentialSampler</span><span class="p">(</span><span class="mf">2.0</span><span class="p">,</span> <span class="mi">5000</span><span class="p">)</span>
+<span class="n">n</span><span class="p">,</span> <span class="n">bins</span><span class="p">,</span> <span class="n">patches</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">hist</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="mi">20</span><span class="p">,</span> <span class="n">normed</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">facecolor</span><span class="o">=</span><span class="s1">&#39;green&#39;</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.65</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">xlabel</span><span class="p">(</span><span class="s1">&#39;x&#39;</span><span class="p">,</span> <span class="n">fontsize</span><span class="o">=</span><span class="s1">&#39;18&#39;</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">ylabel</span><span class="p">(</span><span class="s1">&#39;p(x)&#39;</span><span class="p">,</span> <span class="n">fontsize</span><span class="o">=</span><span class="s1">&#39;18&#39;</span><span class="p">)</span>
+
+<span class="n">xi</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="mf">0.0</span><span class="p">,</span><span class="mf">3.5</span><span class="p">,</span><span class="mi">1000</span><span class="p">)</span>
+<span class="n">lam</span> <span class="o">=</span> <span class="mf">2.0</span><span class="p">;</span> <span class="n">fexp</span> <span class="o">=</span> <span class="n">lam</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="o">-</span><span class="n">lam</span><span class="o">*</span><span class="n">xi</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">xi</span><span class="p">,</span> <span class="n">fexp</span><span class="p">,</span> <span class="s1">&#39;b-&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="p">[</span><span class="o">&lt;</span><span class="n">matplotlib</span><span class="o">.</span><span class="n">lines</span><span class="o">.</span><span class="n">Line2D</span> <span class="n">at</span> <span class="mh">0x125e71f98</span><span class="o">&gt;</span><span class="p">]</span>
+</pre></div>
+</div>
+<img alt="../_images/SamplingNonStandard1D-updated_16_1.svg" src="../_images/SamplingNonStandard1D-updated_16_1.svg" /><p><em>Exercise 1</em>: Write a program to sample from the Weibull distribution,
+which has parameters <span class="math notranslate nohighlight">\(\lambda&gt;0\)</span> and <span class="math notranslate nohighlight">\(k&gt;0\)</span>, given by:</p>
+<div class="math notranslate nohighlight">
+\[\begin{split}f(x;\lambda,k) =
+\begin{cases}
+\frac{k}{\lambda}\left(\frac{x}{\lambda}\right)^{k-1}e^{-(x/\lambda)^{k}} &amp; x\geq0 ,\\
+0 &amp; x&lt;0.
+\end{cases}\end{split}\]</div>
+<p><em>Hint</em>: It has a CDF given by:</p>
+<div class="math notranslate nohighlight">
+\[\begin{split}F(x; \lambda,k) = \begin{cases}1- e^{-(x/\lambda)^k} &amp; x\geq0\\ 0 &amp; x&lt;0\end{cases}\end{split}\]</div>
+<p><em>Exercise 2</em>: How would you sample from a discrete distribution, such as
+a roll of a die or a toss of a coin?</p>
+<p><em>Exercise 3</em>: Write a program to sample from <span class="math notranslate nohighlight">\(U[a, b]\)</span>.</p>
+<div class="section" id="advantages-and-disadvantages">
+<h3>Advantages and Disadvantages:<a class="headerlink" href="#advantages-and-disadvantages" title="Permalink to this headline">¶</a></h3>
+<ul class="simple">
+<li><p>(-) requires a closed form expression for <span class="math notranslate nohighlight">\(F(x)\)</span>, or
+potentially costly numerics</p></li>
+<li><p>(-) may not be simplest or fastest for a particular target
+distribution (example Gaussian distribution)</p></li>
+<li><p>(-) can become unworkable for non-standard multidimensional PDFs</p></li>
+<li><p>(+) generally works quite fast</p></li>
+<li><p>(+) works for any monotonically increasing <span class="math notranslate nohighlight">\(F(x)\)</span> (could be
+flat in some regions)</p></li>
+<li><p>(+) can be used for continuous, discrete, or mixed
+continuous-discrete (multidimensional)</p></li>
+</ul>
+</div>
+</div>
+<div class="section" id="accept-reject-method">
+<h2>Accept-Reject Method<a class="headerlink" href="#accept-reject-method" title="Permalink to this headline">¶</a></h2>
+<p>The idea is to enclose the distribution in an appropriate box, and throw
+darts at it. Does this sound familiar?</p>
+<p>We already used this technique to compute integrals (which as we’ve now
+learnt) can be thought of as a subset of the larger sampling problem,
+from a Monte Carlo perspective.</p>
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">scipy</span> <span class="k">import</span> <span class="n">stats</span>
+<span class="n">x_range</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="o">-</span><span class="mi">10</span><span class="p">,</span> <span class="mi">10</span><span class="p">,</span> <span class="mi">300</span><span class="p">)</span>
+<span class="n">n1</span> <span class="o">=</span> <span class="n">stats</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span><span class="o">-</span><span class="mf">1.5</span><span class="p">,</span> <span class="mf">1.3</span><span class="p">)</span>
+<span class="n">n2</span> <span class="o">=</span> <span class="n">stats</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span><span class="mf">1.7</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+
+<span class="n">n3</span> <span class="o">=</span> <span class="n">n1</span><span class="o">.</span><span class="n">pdf</span><span class="p">(</span><span class="n">x_range</span><span class="p">)</span> <span class="o">+</span> <span class="n">n2</span><span class="o">.</span><span class="n">pdf</span><span class="p">(</span><span class="n">x_range</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">style</span><span class="o">.</span><span class="n">use</span><span class="p">(</span><span class="s1">&#39;default&#39;</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">rc</span><span class="p">(</span><span class="s1">&#39;font&#39;</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="mi">18</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">x_range</span><span class="p">,</span> <span class="n">n3</span><span class="p">,</span> <span class="n">lw</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s1">&#39;#ff7f0e&#39;</span><span class="p">,</span> <span class="n">zorder</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">fill_between</span><span class="p">(</span><span class="n">x_range</span><span class="p">,</span> <span class="n">n3</span><span class="p">,</span><span class="n">color</span><span class="o">=</span><span class="p">(</span><span class="mf">1.</span><span class="p">,</span> <span class="o">.</span><span class="mi">75</span><span class="p">,</span> <span class="o">.</span><span class="mi">59</span><span class="p">),</span><span class="n">zorder</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+
+<span class="n">plt</span><span class="o">.</span><span class="n">gca</span><span class="p">()</span><span class="o">.</span><span class="n">add_patch</span><span class="p">(</span>
+    <span class="n">mpl</span><span class="o">.</span><span class="n">patches</span><span class="o">.</span><span class="n">PathPatch</span><span class="p">(</span>
+        <span class="n">mpl</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">Path</span><span class="p">([(</span><span class="o">-</span><span class="mi">6</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span>
+                       <span class="p">(</span><span class="o">-</span><span class="mi">6</span><span class="p">,</span> <span class="nb">max</span><span class="p">(</span><span class="n">n3</span><span class="p">)),</span>
+                       <span class="p">(</span><span class="mi">6</span><span class="p">,</span> <span class="nb">max</span><span class="p">(</span><span class="n">n3</span><span class="p">)),</span>
+                       <span class="p">(</span><span class="mi">6</span><span class="p">,</span> <span class="mi">0</span><span class="p">)]),</span>
+        <span class="n">alpha</span><span class="o">=.</span><span class="mi">2</span><span class="p">,</span> <span class="n">lw</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span> <span class="n">zorder</span><span class="o">=</span><span class="mi">0</span>
+    <span class="p">)</span>
+<span class="p">)</span>
+
+<span class="n">plt</span><span class="o">.</span><span class="n">gca</span><span class="p">()</span><span class="o">.</span><span class="n">yaxis</span><span class="o">.</span><span class="n">set_major_locator</span><span class="p">(</span><span class="n">plt</span><span class="o">.</span><span class="n">NullLocator</span><span class="p">())</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">gca</span><span class="p">()</span><span class="o">.</span><span class="n">xaxis</span><span class="o">.</span><span class="n">set_major_locator</span><span class="p">(</span><span class="n">plt</span><span class="o">.</span><span class="n">FixedLocator</span><span class="p">((</span><span class="o">-</span><span class="mi">6</span><span class="p">,</span> <span class="mi">6</span><span class="p">)))</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">gca</span><span class="p">()</span><span class="o">.</span><span class="n">xaxis</span><span class="o">.</span><span class="n">set_major_formatter</span><span class="p">(</span><span class="n">plt</span><span class="o">.</span><span class="n">FixedFormatter</span><span class="p">((</span><span class="sa">r</span><span class="s1">&#39;$x_</span><span class="si">{min}</span><span class="s1">$&#39;</span><span class="p">,</span><span class="sa">r</span><span class="s1">&#39;$x_</span><span class="si">{max}</span><span class="s1">$&#39;</span><span class="p">)))</span>
+
+<span class="n">plt</span><span class="o">.</span><span class="n">ylabel</span><span class="p">(</span><span class="s1">&#39;f(x)&#39;</span><span class="p">,</span> <span class="p">{</span>
+       <span class="s1">&#39;fontsize&#39;</span>            <span class="p">:</span> <span class="mi">18</span><span class="p">,</span>
+       <span class="s1">&#39;horizontalalignment&#39;</span> <span class="p">:</span> <span class="s1">&#39;right&#39;</span><span class="p">,</span>
+       <span class="s1">&#39;rotation&#39;</span>            <span class="p">:</span><span class="s1">&#39;horizontal&#39;</span>  <span class="p">}</span>
+          <span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">xlabel</span><span class="p">(</span><span class="s1">&#39;x&#39;</span><span class="p">,</span> <span class="n">fontsize</span><span class="o">=</span><span class="mi">18</span><span class="p">,</span> <span class="n">labelpad</span><span class="o">=-</span><span class="mi">20</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">xlim</span><span class="p">(</span><span class="o">-</span><span class="mi">8</span><span class="p">,</span> <span class="mi">8</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">ylim</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="o">.</span><span class="mi">6</span><span class="p">)</span>
+</pre></div>
+</div>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mf">0.6</span><span class="p">)</span>
+</pre></div>
+</div>
+<img alt="../_images/SamplingNonStandard1D-updated_22_1.svg" src="../_images/SamplingNonStandard1D-updated_22_1.svg" /><p>Suppose the distribution <span class="math notranslate nohighlight">\(f(x)\)</span> is contained within
+<span class="math notranslate nohighlight">\(x_{min} \leq x \leq x_{max}\)</span>. We draw a box of height
+<span class="math notranslate nohighlight">\(f_{max}\)</span> which fully encloses the distribution. The algorithm
+then works as follows:</p>
+<ul class="simple">
+<li><p>Generate a random number <span class="math notranslate nohighlight">\(x \sim U[x_{min}, x_{max}]\)</span></p></li>
+<li><p>Generate a 2nd independent random number <span class="math notranslate nohighlight">\(u \sim U[0, f_{max}]\)</span></p></li>
+<li><p>If <span class="math notranslate nohighlight">\(u &lt; f(x)\)</span>, then accept x. If not, reject x and repeat.</p></li>
+</ul>
+<p>Example: Consider the distribtion,</p>
+<div class="math notranslate nohighlight">
+\[f(x) = \frac{3}{8} (1+x^2), ~~~ -1 \leq x \leq 1\]</div>
+<p>If we plot the function, we realize that the maximum value occurs at
+<span class="math notranslate nohighlight">\(x = 1\)</span>, thus <span class="math notranslate nohighlight">\(f_{max} = 3/4\)</span></p>
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">acceptRejectExample</span><span class="p">(</span><span class="n">ndarts</span><span class="p">):</span>
+    <span class="n">xmin</span> <span class="o">=</span> <span class="o">-</span><span class="mf">1.</span>
+    <span class="n">xmax</span> <span class="o">=</span> <span class="mf">1.</span>
+    <span class="n">fmax</span> <span class="o">=</span> <span class="mf">3.</span><span class="o">/</span><span class="mi">4</span>
+
+    <span class="n">x</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">uniform</span><span class="p">(</span><span class="n">xmin</span><span class="p">,</span> <span class="n">xmax</span><span class="p">,</span> <span class="n">ndarts</span><span class="p">)</span>
+    <span class="n">u</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">uniform</span><span class="p">(</span><span class="mf">0.</span><span class="p">,</span> <span class="n">fmax</span><span class="p">,</span> <span class="n">ndarts</span><span class="p">)</span>
+
+    <span class="n">y</span> <span class="o">=</span> <span class="n">x</span><span class="p">[</span><span class="n">u</span> <span class="o">&lt;</span> <span class="mf">3.</span><span class="o">/</span><span class="mf">8.</span> <span class="o">*</span> <span class="p">(</span><span class="mi">1</span> <span class="o">+</span> <span class="n">x</span><span class="o">**</span><span class="mi">2</span><span class="p">)]</span>
+
+    <span class="n">xi</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">);</span> <span class="n">fi</span> <span class="o">=</span> <span class="mf">3.</span><span class="o">/</span><span class="mf">8.</span> <span class="o">*</span> <span class="p">(</span><span class="mi">1</span> <span class="o">+</span> <span class="n">xi</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span>
+    <span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">xi</span><span class="p">,</span> <span class="n">fi</span><span class="p">,</span><span class="s1">&#39;b-&#39;</span><span class="p">,</span> <span class="n">lw</span><span class="o">=</span><span class="mi">3</span><span class="p">)</span>
+    <span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">y</span><span class="p">,</span><span class="n">u</span><span class="p">[</span><span class="n">u</span> <span class="o">&lt;</span> <span class="mf">3.</span><span class="o">/</span><span class="mf">8.</span> <span class="o">*</span> <span class="p">(</span><span class="mi">1</span> <span class="o">+</span> <span class="n">x</span><span class="o">**</span><span class="mi">2</span><span class="p">)],</span><span class="s1">&#39;r.&#39;</span><span class="p">)</span>
+    <span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">x</span><span class="p">[</span><span class="n">u</span> <span class="o">&gt;</span> <span class="mf">3.</span><span class="o">/</span><span class="mf">8.</span> <span class="o">*</span> <span class="p">(</span><span class="mi">1</span> <span class="o">+</span> <span class="n">x</span><span class="o">**</span><span class="mi">2</span><span class="p">)],</span><span class="n">u</span><span class="p">[</span><span class="n">u</span> <span class="o">&gt;</span> <span class="mf">3.</span><span class="o">/</span><span class="mf">8.</span> <span class="o">*</span> <span class="p">(</span><span class="mi">1</span> <span class="o">+</span> <span class="n">x</span><span class="o">**</span><span class="mi">2</span><span class="p">)],</span><span class="s1">&#39;g.&#39;</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">y</span>
+</pre></div>
+</div>
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">plt</span><span class="o">.</span><span class="n">style</span><span class="o">.</span><span class="n">use</span><span class="p">(</span><span class="s1">&#39;seaborn&#39;</span><span class="p">)</span>
+<span class="n">x</span> <span class="o">=</span> <span class="n">acceptRejectExample</span><span class="p">(</span><span class="mi">5000</span><span class="p">)</span>
+</pre></div>
+</div>
+<img alt="../_images/SamplingNonStandard1D-updated_26_0.svg" src="../_images/SamplingNonStandard1D-updated_26_0.svg" /><div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">n</span><span class="p">,</span> <span class="n">bins</span><span class="p">,</span> <span class="n">patches</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">hist</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="mi">20</span><span class="p">,</span> <span class="n">normed</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">facecolor</span><span class="o">=</span><span class="s1">&#39;green&#39;</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.65</span><span class="p">)</span>
+<span class="n">xi</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">);</span> <span class="n">fi</span> <span class="o">=</span> <span class="mf">3.</span><span class="o">/</span><span class="mf">8.</span> <span class="o">*</span> <span class="p">(</span><span class="mi">1</span> <span class="o">+</span> <span class="n">xi</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">xi</span><span class="p">,</span> <span class="n">fi</span><span class="p">,</span><span class="s1">&#39;b-&#39;</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">xlabel</span><span class="p">(</span><span class="s1">&#39;x&#39;</span><span class="p">,</span> <span class="n">fontsize</span><span class="o">=</span><span class="s1">&#39;18&#39;</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">ylabel</span><span class="p">(</span><span class="s1">&#39;f(x)&#39;</span><span class="p">,</span> <span class="n">fontsize</span><span class="o">=</span><span class="s1">&#39;18&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">Text</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="mf">0.5</span><span class="p">,</span><span class="s1">&#39;f(x)&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+<img alt="../_images/SamplingNonStandard1D-updated_27_1.svg" src="../_images/SamplingNonStandard1D-updated_27_1.svg" /><p>This is a more general method that can be applied in more than 1D.</p>
+<ul class="simple">
+<li><p>The target distribution need not be invertible</p></li>
+<li><p>If the distribution is sharply peaked we may draw multiple boxes of
+different heights to reduce rejection</p></li>
+<li><p>even if the domain is infinite, the computational domain (double
+precision floating point numbers for example) is not infinite</p></li>
+</ul>
+<p><em>Adaptive rejection sampling</em> tries to ameliorate some of the demerits
+of this method by</p>
+<ul class="simple">
+<li><p>defining the envelope distribution in log space (e.g. log-probability
+or log-density)</p></li>
+<li><p>use a piecewise linear density function as your envelope (which is
+adapted as the sampling is carried on)</p></li>
+</ul>
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">plt</span><span class="o">.</span><span class="n">style</span><span class="o">.</span><span class="n">use</span><span class="p">(</span><span class="s1">&#39;default&#39;</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">rc</span><span class="p">(</span><span class="s1">&#39;font&#39;</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="mi">18</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">x_range</span><span class="p">,</span> <span class="n">n3</span><span class="p">,</span> <span class="n">lw</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s1">&#39;#ff7f0e&#39;</span><span class="p">,</span> <span class="n">zorder</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">fill_between</span><span class="p">(</span><span class="n">x_range</span><span class="p">,</span> <span class="n">n3</span><span class="p">,</span><span class="n">color</span><span class="o">=</span><span class="p">(</span><span class="mf">1.</span><span class="p">,</span> <span class="o">.</span><span class="mi">75</span><span class="p">,</span> <span class="o">.</span><span class="mi">59</span><span class="p">),</span><span class="n">zorder</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+
+<span class="n">plt</span><span class="o">.</span><span class="n">gca</span><span class="p">()</span><span class="o">.</span><span class="n">add_patch</span><span class="p">(</span>
+    <span class="n">mpl</span><span class="o">.</span><span class="n">patches</span><span class="o">.</span><span class="n">PathPatch</span><span class="p">(</span>
+        <span class="n">mpl</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">Path</span><span class="p">([(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span>
+                       <span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="nb">max</span><span class="p">(</span><span class="n">n3</span><span class="p">)),</span>
+                       <span class="p">(</span><span class="mi">6</span><span class="p">,</span> <span class="nb">max</span><span class="p">(</span><span class="n">n3</span><span class="p">)),</span>
+                       <span class="p">(</span><span class="mi">6</span><span class="p">,</span> <span class="mi">0</span><span class="p">)]),</span>
+        <span class="n">alpha</span><span class="o">=.</span><span class="mi">2</span><span class="p">,</span> <span class="n">lw</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span> <span class="n">zorder</span><span class="o">=</span><span class="mi">0</span>
+    <span class="p">)</span>
+<span class="p">)</span>
+
+<span class="n">plt</span><span class="o">.</span><span class="n">gca</span><span class="p">()</span><span class="o">.</span><span class="n">add_patch</span><span class="p">(</span>
+    <span class="n">mpl</span><span class="o">.</span><span class="n">patches</span><span class="o">.</span><span class="n">PathPatch</span><span class="p">(</span>
+        <span class="n">mpl</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">Path</span><span class="p">([(</span><span class="o">-</span><span class="mi">6</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span>
+                       <span class="p">(</span><span class="o">-</span><span class="mi">6</span><span class="p">,</span> <span class="nb">max</span><span class="p">(</span><span class="n">n3</span><span class="p">[</span><span class="n">x_range</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">])),</span>
+                       <span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="nb">max</span><span class="p">(</span><span class="n">n3</span><span class="p">[</span><span class="n">x_range</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">])),</span>
+                       <span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">)]),</span>
+        <span class="n">edgecolor</span><span class="o">=</span><span class="p">(</span><span class="o">.</span><span class="mi">8</span><span class="p">,</span><span class="o">.</span><span class="mi">8</span><span class="p">,</span><span class="o">.</span><span class="mi">8</span><span class="p">),</span> <span class="n">lw</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span> <span class="n">zorder</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">facecolor</span><span class="o">=</span><span class="p">(</span><span class="mf">0.8</span><span class="p">,</span><span class="o">.</span><span class="mi">89</span><span class="p">,</span> <span class="o">.</span><span class="mi">94</span><span class="p">)</span>
+    <span class="p">)</span>
+<span class="p">)</span>
+
+<span class="n">plt</span><span class="o">.</span><span class="n">vlines</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span><span class="n">n1</span><span class="o">.</span><span class="n">pdf</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span> <span class="o">+</span> <span class="n">n2</span><span class="o">.</span><span class="n">pdf</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span> <span class="p">,</span> <span class="n">linestyle</span><span class="o">=</span><span class="s1">&#39;dashed&#39;</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=.</span><span class="mi">2</span><span class="p">)</span>
+
+<span class="n">plt</span><span class="o">.</span><span class="n">gca</span><span class="p">()</span><span class="o">.</span><span class="n">yaxis</span><span class="o">.</span><span class="n">set_major_locator</span><span class="p">(</span><span class="n">plt</span><span class="o">.</span><span class="n">NullLocator</span><span class="p">())</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">gca</span><span class="p">()</span><span class="o">.</span><span class="n">xaxis</span><span class="o">.</span><span class="n">set_major_locator</span><span class="p">(</span><span class="n">plt</span><span class="o">.</span><span class="n">FixedLocator</span><span class="p">((</span><span class="o">-</span><span class="mi">6</span><span class="p">,</span> <span class="mi">6</span><span class="p">)))</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">gca</span><span class="p">()</span><span class="o">.</span><span class="n">xaxis</span><span class="o">.</span><span class="n">set_major_formatter</span><span class="p">(</span><span class="n">plt</span><span class="o">.</span><span class="n">FixedFormatter</span><span class="p">((</span><span class="sa">r</span><span class="s1">&#39;$x_</span><span class="si">{min}</span><span class="s1">$&#39;</span><span class="p">,</span><span class="sa">r</span><span class="s1">&#39;$x_</span><span class="si">{max}</span><span class="s1">$&#39;</span><span class="p">)))</span>
+
+<span class="n">plt</span><span class="o">.</span><span class="n">ylabel</span><span class="p">(</span><span class="s1">&#39;f(x)&#39;</span><span class="p">,</span> <span class="p">{</span>
+       <span class="s1">&#39;fontsize&#39;</span>            <span class="p">:</span> <span class="mi">18</span><span class="p">,</span>
+       <span class="s1">&#39;horizontalalignment&#39;</span> <span class="p">:</span> <span class="s1">&#39;right&#39;</span><span class="p">,</span>
+       <span class="s1">&#39;rotation&#39;</span>            <span class="p">:</span><span class="s1">&#39;horizontal&#39;</span>  <span class="p">}</span>
+          <span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">xlabel</span><span class="p">(</span><span class="s1">&#39;x&#39;</span><span class="p">,</span> <span class="n">fontsize</span><span class="o">=</span><span class="mi">18</span><span class="p">,</span> <span class="n">labelpad</span><span class="o">=-</span><span class="mi">20</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">xlim</span><span class="p">(</span><span class="o">-</span><span class="mi">8</span><span class="p">,</span> <span class="mi">8</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">ylim</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="o">.</span><span class="mi">6</span><span class="p">)</span>
+</pre></div>
+</div>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mf">0.6</span><span class="p">)</span>
+</pre></div>
+</div>
+<img alt="../_images/SamplingNonStandard1D-updated_29_1.svg" src="../_images/SamplingNonStandard1D-updated_29_1.svg" /></div>
+<div class="section" id="postface">
+<h2>PostFace<a class="headerlink" href="#postface" title="Permalink to this headline">¶</a></h2>
+<p>For 1D sampling, one of these two methods should generally suffice.</p>
+<p>As the number of dimensions increases:</p>
+<ul class="simple">
+<li><p>the <strong>transformation method</strong> gets increasingly hard to apply, even
+if we use numerical rather than analytical inversion</p></li>
+<li><p>the number of rejections in the <strong>accept-reject method</strong> increases
+rapidly</p></li>
+</ul>
+<p>Even sophisticated variants of these simple algorithms can no longer
+cope with this complexity</p>
+<p>Next, we will look at 2D distributions, as a window into these higher
+dimensional spaces. As the dimensionality increases, MCMC - which are
+not particularly competitive in these low dimensional spaces - start to
+shine!</p>
+</div>
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+      
+        <a href="sampleDistributions-updated.html" class="btn btn-neutral float-left" title="Probability and Pseudorandom Numbers" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2019, Sachin Shanbhag, Eitan Lees
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>
